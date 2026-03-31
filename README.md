@@ -4,6 +4,8 @@ A JetBrains IDE plugin that rewrites rough prompts into clear, well-structured i
 
 Type a quick thought, press a shortcut, review the enhanced version, and insert it back into the terminal — all without leaving your IDE.
 
+![Screenshot of the prompt enhancer dialog in IntelliJ IDEA](intellij-prompt-enhancer.png)
+
 ## How it works
 
 1. Type a rough prompt in the Claude Code terminal panel
