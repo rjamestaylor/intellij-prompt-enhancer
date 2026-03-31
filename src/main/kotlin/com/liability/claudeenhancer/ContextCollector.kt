@@ -105,8 +105,10 @@ object GitContextHelper {
                 .redirectErrorStream(true)
                 .start()
             val output = proc.inputStream.bufferedReader().readText().trim()
-            proc.waitFor()
-            output
+            if (!proc.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                proc.destroyForcibly()
+                ""
+            } else output
         } catch (_: Exception) { "" }
 
         return "Branch: $branch\nRecent commits:\n$log"

@@ -169,7 +169,9 @@ class ModelClient(
             val proc = ProcessBuilder("/bin/sh", "-l", "-c", "which $name")
                 .redirectErrorStream(true).start()
             val path = proc.inputStream.bufferedReader().readLine()?.trim() ?: ""
-            proc.waitFor()
+            if (!proc.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                proc.destroyForcibly()
+            }
             if (path.isNotEmpty() && java.io.File(path).canExecute()) {
                 resolvedBinaryCache[name] = path
                 return path
@@ -221,16 +223,25 @@ class ModelClient(
     /**
      * Extract the first capture group of [pattern] from [json],
      * un-escaping JSON string escape sequences in the result.
+     *
+     * Uses a single-pass regex replacement so that sequences like `\\n`
+     * (literal backslash + n) are not misinterpreted as a newline.
      */
     internal fun extractJsonString(json: String, pattern: String): String? {
         val match = Regex(pattern, RegexOption.DOT_MATCHES_ALL).find(json) ?: return null
-        return match.groupValues[1]
-            .replace("\\n", "\n")
-            .replace("\\r", "\r")
-            .replace("\\t", "\t")
-            .replace("\\\"", "\"")
-            .replace("\\\\", "\\")
+        return unescapeJsonString(match.groupValues[1])
     }
+
+    /** Single-pass JSON string unescape — handles `\\n` vs `\n` correctly. */
+    private fun unescapeJsonString(s: String): String =
+        s.replace(Regex("""\\(["\\/nrt])""")) { m ->
+            when (m.groupValues[1]) {
+                "n"  -> "\n"
+                "r"  -> "\r"
+                "t"  -> "\t"
+                else -> m.groupValues[1]   // \", \\, \/  → the char itself
+            }
+        }
 }
 
 class ModelCallException(message: String) : RuntimeException(message)

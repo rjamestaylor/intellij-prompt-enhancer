@@ -106,6 +106,8 @@ class ModelClientTest {
 
     // ── JSON helpers ──────────────────────────────────────────────────────────
 
+    private val textPattern = """"text"\s*:\s*"((?:[^"\\]|\\.)*)""""
+
     @Test fun `jsonString escapes special characters`() {
         val client = makeClient(ApiStyle.ANTHROPIC)
         assertEquals("\"hello\\nworld\"",  client.jsonString("hello\nworld"))
@@ -113,16 +115,89 @@ class ModelClientTest {
         assertEquals("\"back\\\\slash\"",  client.jsonString("back\\slash"))
     }
 
+    @Test fun `jsonString round-trips through extractJsonString`() {
+        val client = makeClient(ApiStyle.ANTHROPIC)
+        val inputs = listOf(
+            "simple text",
+            "line1\nline2",
+            """say "hello" there""",
+            """path\to\file""",
+            """escaped \" quote""",                  // backslash + quote
+            """double\\backslash""",                 // two backslashes
+            """mixed\nnewline and \\n literal""",    // real newline vs literal \n
+            "tab\there",
+            "emoji \uD83D\uDE80 rocket",
+        )
+        for (input in inputs) {
+            val json = """{"text": ${client.jsonString(input)}}"""
+            val result = client.extractJsonString(json, textPattern)
+            assertEquals(input, result, "Round-trip failed for: ${input.replace("\n", "\\n")}")
+        }
+    }
+
     @Test fun `extractJsonString finds first match`() {
         val client = makeClient(ApiStyle.ANTHROPIC)
         val json = """{"text": "hello\nworld"}"""
-        val result = client.extractJsonString(json, """"text"\s*:\s*"((?:[^"\\]|\\.)*)"  """.trim())
+        val result = client.extractJsonString(json, textPattern)
         assertEquals("hello\nworld", result)
+    }
+
+    @Test fun `extractJsonString handles nested escaped quotes`() {
+        val client = makeClient(ApiStyle.ANTHROPIC)
+        val json = """{"text": "say \"hello\" there"}"""
+        val result = client.extractJsonString(json, textPattern)
+        assertEquals("say \"hello\" there", result)
+    }
+
+    @Test fun `extractJsonString distinguishes literal backslash-n from newline`() {
+        val client = makeClient(ApiStyle.ANTHROPIC)
+        // JSON \\n = literal backslash + n  (not a newline)
+        val json = """{"text": "path\\nname"}"""
+        val result = client.extractJsonString(json, textPattern)
+        assertEquals("path\\nname", result)
+    }
+
+    @Test fun `extractJsonString handles escaped backslash at end`() {
+        val client = makeClient(ApiStyle.ANTHROPIC)
+        val json = """{"text": "trailing\\"}"""
+        val result = client.extractJsonString(json, textPattern)
+        assertEquals("trailing\\", result)
     }
 
     @Test fun `extractJsonString returns null when no match`() {
         val client = makeClient(ApiStyle.ANTHROPIC)
-        assertNull(client.extractJsonString("{}", """"text"\s*:\s*"((?:[^"\\]|\\.)*)"  """.trim()))
+        assertNull(client.extractJsonString("{}", textPattern))
+    }
+
+    // ── CLI binary resolution ────────────────────────────────────────────────
+
+    @Test fun `cli throws on empty output`() {
+        server.enqueue(MockResponse()) // unused — CLI doesn't hit HTTP
+
+        val state = EnhancerState(
+            apiStyle = ApiStyle.CLI,
+            claudePath = "/usr/bin/true",   // exits 0 but produces no output
+        )
+        val client = ModelClient(state, "")
+        assertThrows<ModelCallException> { client.enhance("test", "") }
+    }
+
+    @Test fun `cli throws on non-executable path`() {
+        val state = EnhancerState(
+            apiStyle = ApiStyle.CLI,
+            claudePath = "/nonexistent/binary",
+        )
+        val client = ModelClient(state, "")
+        assertThrows<ModelCallException> { client.enhance("test", "") }
+    }
+
+    @Test fun `cli throws on non-zero exit`() {
+        val state = EnhancerState(
+            apiStyle = ApiStyle.CLI,
+            claudePath = "/usr/bin/false",   // exits 1
+        )
+        val client = ModelClient(state, "")
+        assertThrows<ModelCallException> { client.enhance("test", "") }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
