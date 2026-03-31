@@ -1,0 +1,54 @@
+<idea-plugin>
+  <id>com.liability.claude-prompt-enhancer</id>
+  <name>Claude Code Prompt Enhancer</name>
+  <vendor url="https://liability.engineering">robot.taylor</vendor>
+  <description><![CDATA[
+    Rewrites the current Claude Code terminal prompt via a lightweight model before you submit it.<br/>
+    <ul>
+      <li>Type a rough prompt in the Claude Code terminal panel</li>
+      <li>Press <b>Shift+Opt+Cmd+.</b> to trigger enhancement</li>
+      <li>Review the enhanced prompt in the dialog, edit if needed, then click <b>Insert</b></li>
+      <li>Hit Enter as normal to submit to Claude Code</li>
+    </ul>
+    Supports the Anthropic API and any OpenAI-compatible endpoint (Ollama, etc.).<br/>
+    Configure at <b>Settings → Tools → Claude Prompt Enhancer</b>.
+  ]]></description>
+
+  <change-notes><![CDATA[
+    <b>0.1.0</b>
+    <ul>
+      <li>Initial release: keyboard-shortcut prompt enhancement with three API backends</li>
+      <li>Fixed CLI backend deadlock, clipboard fallback EDT freeze, binary resolution caching</li>
+      <li><b>System prompt improved</b> — the model no longer refuses non-coding inputs.
+          If upgrading from a pre-release build, reset the system prompt in
+          <em>Settings → Tools → Claude Prompt Enhancer</em> to pick up the fix.</li>
+    </ul>
+  ]]></change-notes>
+
+  <depends>com.intellij.modules.platform</depends>
+  <depends>org.jetbrains.plugins.terminal</depends>
+  <!-- git4idea is optional: git context is skipped gracefully when unavailable -->
+  <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <applicationService
+        serviceImplementation="com.liability.claudeenhancer.EnhancerSettings"/>
+    <applicationConfigurable
+        instance="com.liability.claudeenhancer.EnhancerSettingsUI"
+        id="com.liability.claudeenhancer.settings"
+        displayName="Claude Prompt Enhancer"
+        parentId="tools"/>
+  </extensions>
+
+  <actions>
+    <action id="ClaudeEnhancer.EnhancePrompt"
+            class="com.liability.claudeenhancer.EnhancePromptAction"
+            text="Enhance Prompt for Claude Code"
+            description="Rewrites the current terminal input via a lightweight model, then lets you review before inserting">
+      <!-- Shift+Opt+Cmd+. (period) — user-chosen, avoids all known conflicts -->
+      <keyboard-shortcut keymap="$default"       first-keystroke="shift ctrl alt PERIOD"/>
+      <keyboard-shortcut keymap="Mac OS X"       first-keystroke="shift meta alt PERIOD"/>
+      <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift meta alt PERIOD"/>
+    </action>
+  </actions>
+</idea-plugin>

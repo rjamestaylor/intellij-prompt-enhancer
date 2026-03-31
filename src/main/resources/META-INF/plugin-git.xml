@@ -1,0 +1,3 @@
+<idea-plugin>
+  <!-- Git context collection — loaded only when git4idea is present -->
+</idea-plugin>
