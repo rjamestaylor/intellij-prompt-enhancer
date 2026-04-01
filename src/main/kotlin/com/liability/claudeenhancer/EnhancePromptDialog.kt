@@ -17,10 +17,14 @@ import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
+import java.awt.event.ActionEvent
+import java.awt.event.KeyEvent
+import javax.swing.AbstractAction
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.JSplitPane
+import javax.swing.KeyStroke
 
 /**
  * Two-pane review dialog:
@@ -51,6 +55,14 @@ class EnhancePromptDialog(
     }
     private val enhanceButton = JButton("Enhance ↻")
     private val spinner       = AsyncProcessIcon("enhancing").apply { isVisible = false }
+    private val elapsedLabel  = JBLabel().apply {
+        foreground = UIUtil.getLabelDisabledForeground()
+        isVisible = false
+    }
+
+    /** Timer that updates the elapsed label every second while loading. */
+    private var elapsedTimer: javax.swing.Timer? = null
+    private var enhanceStartMs = 0L
 
     val enhancedText: String get() = enhancedArea.text
 
@@ -58,6 +70,18 @@ class EnhancePromptDialog(
         title = "Claude Prompt Enhancer"
         setOKButtonText("Insert into terminal")
         init()
+
+        // Ctrl+Enter / Cmd+Enter inserts into terminal from anywhere in the dialog.
+        val insertKey = if (System.getProperty("os.name", "").lowercase().contains("mac"))
+            KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, ActionEvent.META_MASK)
+        else
+            KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, ActionEvent.CTRL_MASK)
+
+        rootPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+            .put(insertKey, "insertAction")
+        rootPane.actionMap.put("insertAction", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) { doOKAction() }
+        })
 
         // Auto-focus the input area so the user can start typing immediately.
         ApplicationManager.getApplication().invokeLater {
@@ -85,8 +109,10 @@ class EnhancePromptDialog(
                 }
                 add(JBLabel("Enhanced prompt (editable):"), gbc)
                 gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0; gbc.gridx = 1
-                add(spinner, gbc)
+                add(elapsedLabel, gbc)
                 gbc.gridx = 2
+                add(spinner, gbc)
+                gbc.gridx = 3
                 add(enhanceButton, gbc)
             }
             add(header, BorderLayout.NORTH)
@@ -132,7 +158,20 @@ class EnhancePromptDialog(
         spinner.isVisible = loading
         if (loading) spinner.resume() else spinner.suspend()
         enhancedArea.isEditable = !loading
-        if (loading) enhancedArea.text = ""
+
+        if (loading) {
+            enhanceStartMs = System.currentTimeMillis()
+            elapsedLabel.text = "0s "
+            elapsedLabel.isVisible = true
+            elapsedTimer = javax.swing.Timer(1000) {
+                val secs = (System.currentTimeMillis() - enhanceStartMs) / 1000
+                elapsedLabel.text = "${secs}s "
+            }.also { it.start() }
+        } else {
+            elapsedTimer?.stop()
+            elapsedTimer = null
+            elapsedLabel.isVisible = false
+        }
     }
 
     private fun runEnhancement() {
@@ -140,6 +179,17 @@ class EnhancePromptDialog(
         if (rawPrompt.isBlank()) {
             Messages.showWarningDialog(project, "Please enter a prompt to enhance.", "Empty Prompt")
             return
+        }
+
+        // Confirm before wiping user edits.
+        if (enhancedArea.text.isNotBlank()) {
+            val overwrite = Messages.showYesNoDialog(
+                project,
+                "Re-running enhancement will replace your current edits. Continue?",
+                "Re-enhance",
+                Messages.getQuestionIcon()
+            )
+            if (overwrite != Messages.YES) return
         }
 
         val settings = EnhancerSettings.getInstance()
@@ -155,6 +205,7 @@ class EnhancePromptDialog(
             }
         }
 
+        enhancedArea.text = ""
         setLoading(true)
 
         ProgressManager.getInstance().run(object : Task.Backgroundable(

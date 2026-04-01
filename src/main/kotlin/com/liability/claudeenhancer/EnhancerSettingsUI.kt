@@ -1,5 +1,7 @@
 package com.liability.claudeenhancer
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.options.Configurable
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPasswordField
@@ -20,6 +22,8 @@ import javax.swing.JPanel
 import javax.swing.JSpinner
 import javax.swing.SpinnerNumberModel
 
+private val LOG = logger<EnhancerSettingsUI>()
+
 class EnhancerSettingsUI : Configurable {
 
     private val settings = EnhancerSettings.getInstance()
@@ -32,8 +36,10 @@ class EnhancerSettingsUI : Configurable {
     private val modelField        = JBTextField()
     private val apiStyleCombo     = JComboBox(ApiStyle.entries.toTypedArray())
     private val maxContextSpinner = JSpinner(SpinnerNumberModel(
-        settings.state.maxContextChars, 100, 20_000, 100
+        settings.state.maxContextChars, 100, 100_000, 500
     ))
+    private val testButton        = JButton("Test Connection")
+    private val testResultLabel   = JBLabel().apply { border = JBUI.Borders.emptyLeft(8) }
 
     private val includeGitCheck       = JCheckBox("Include recent git commits")
     private val includeClaudeMdCheck  = JCheckBox("Include CLAUDE.md content")
@@ -56,12 +62,21 @@ class EnhancerSettingsUI : Configurable {
     override fun createComponent(): JComponent {
         apiStyleCombo.addActionListener { updateFieldVisibility() }
 
+        testButton.addActionListener { testConnection() }
+
+        val testPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0)).apply {
+            add(testButton)
+            add(testResultLabel)
+        }
+
         val form = FormBuilder.createFormBuilder()
             .addLabeledComponent(JBLabel("API style:"), apiStyleCombo, 1, false)
             .addLabeledComponent(endpointLabel,   endpointField,   1, false)
             .addLabeledComponent(apiKeyLabel,     apiKeyField,     1, false)
             .addLabeledComponent(claudePathLabel, claudePathField, 1, false)
             .addLabeledComponent(JBLabel("Model:"), modelField,    1, false)
+            .addComponent(testPanel)
+            .addSeparator()
             .addLabeledComponent(JBLabel("Max context chars:"), maxContextSpinner, 1, false)
             .addSeparator()
             .addComponent(JLabel("Context to include:"))
@@ -153,6 +168,56 @@ class EnhancerSettingsUI : Configurable {
         includeClaudeMdCheck.isSelected = s.includeClaudeMd
         includeOpenFilesCheck.isSelected = s.includeOpenFiles
         systemPromptArea.text      = s.systemPrompt
+        testResultLabel.text       = ""
         updateFieldVisibility()
+    }
+
+    // ── Test connection ──────────────────────────────────────────────────────
+
+    /**
+     * Sends a minimal enhancement request using the currently-entered (unsaved)
+     * settings to verify the endpoint, API key, and model are valid.
+     */
+    private fun testConnection() {
+        val style = apiStyleCombo.selectedItem as ApiStyle
+        val isCli = style == ApiStyle.CLI
+
+        val key = if (isCli) "" else {
+            val chars = apiKeyField.password
+            val k = String(chars)
+            java.util.Arrays.fill(chars, '\u0000')
+            if (k.isBlank()) {
+                testResultLabel.foreground = java.awt.Color.RED
+                testResultLabel.text = "API key is empty"
+                return
+            }
+            k
+        }
+
+        val state = EnhancerState(
+            endpoint = endpointField.text.trim(),
+            model = modelField.text.trim().ifBlank { EnhancerState.DEFAULT_MODEL },
+            apiStyle = style,
+            claudePath = claudePathField.text.trim().ifBlank { "claude" },
+            systemPrompt = "Reply with exactly: OK",
+        )
+
+        testButton.isEnabled = false
+        testResultLabel.foreground = java.awt.Color.GRAY
+        testResultLabel.text = "Testing…"
+
+        ApplicationManager.getApplication().executeOnPooledThread {
+            val (success, message) = try {
+                ModelClient(state, key).enhance("Say OK", "")
+                true to "Connection successful"
+            } catch (e: Exception) {
+                false to (e.message ?: e.javaClass.simpleName)
+            }
+            ApplicationManager.getApplication().invokeLater {
+                testButton.isEnabled = true
+                testResultLabel.foreground = if (success) JBUI.CurrentTheme.Focus.focusColor() else java.awt.Color.RED
+                testResultLabel.text = message
+            }
+        }
     }
 }
