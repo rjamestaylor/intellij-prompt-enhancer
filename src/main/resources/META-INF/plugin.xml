@@ -54,8 +54,9 @@
 
     <!-- Right-click context menu in the Terminal tool window -->
     <group>
+      <separator/>
       <reference ref="ClaudeEnhancer.EnhancePrompt"/>
-      <add-to-group group-id="TerminalToolwindowActionGroup" anchor="first"/>
+      <add-to-group group-id="Terminal.ReworkedTerminalContextMenu" anchor="first"/>
     </group>
   </actions>
 </idea-plugin>
