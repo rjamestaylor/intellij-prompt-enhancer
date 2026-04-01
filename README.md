@@ -25,12 +25,15 @@ The plugin never auto-submits. You always review before sending.
 
 ## Requirements
 
+- **[Claude Code \[Beta\] plugin](https://plugins.jetbrains.com/plugin/27310-claude-code-beta-)** — this plugin depends on it and will not load without it
 - IntelliJ-based IDE **2024.3** or later (IntelliJ IDEA, WebStorm, PyCharm, GoLand, etc.)
 - Java 21+
 - One of:
   - An Anthropic API key
   - An OpenAI-compatible endpoint (local or remote)
   - The `claude` CLI installed and authenticated
+
+> **Important:** Use the dedicated "Claude Code" terminal tab provided by the Beta plugin. Running `claude` manually in a plain terminal tab is not supported — the prompt enhancer cannot reliably read or write the input line in that context.
 
 ## Installation
 

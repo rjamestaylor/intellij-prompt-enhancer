@@ -4,6 +4,9 @@
   <vendor url="https://liability.engineering">robot.taylor</vendor>
   <description><![CDATA[
     Rewrites the current Claude Code terminal prompt via a lightweight model before you submit it.<br/>
+    <br/>
+    <b>Requires the <a href="https://plugins.jetbrains.com/plugin/27310-claude-code-beta-">Claude Code [Beta]</a> plugin.</b>
+    Use the dedicated "Claude Code" tab — running Claude Code manually in a plain terminal is not supported.<br/>
     <ul>
       <li>Type a rough prompt in the Claude Code terminal panel</li>
       <li>Press <b>Shift+Opt+Cmd+.</b> to trigger enhancement</li>
@@ -27,6 +30,12 @@
 
   <depends>com.intellij.modules.platform</depends>
   <depends>org.jetbrains.plugins.terminal</depends>
+  <!-- Requires the Claude Code [Beta] JetBrains plugin.
+       Running Claude Code manually in a plain terminal tab causes the plugin
+       to read the shell buffer instead of the prompt input, and write-back
+       corrupts the session. The Beta plugin's dedicated "Claude Code" tab
+       provides the proper input model. -->
+  <depends>com.anthropic.code.plugin</depends>
   <!-- git4idea is optional: git context is skipped gracefully when unavailable -->
   <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>
 
