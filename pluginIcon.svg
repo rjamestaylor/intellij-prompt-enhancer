@@ -1,0 +1,13 @@
+<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+    <rect width="40" height="40" rx="8" fill="#0F1115"/>
+
+    <!-- prompt bracket -->
+    <path d="M7.5 15 L12.5 20 L7.5 25" stroke="#6FEAFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- core circle -->
+    <circle cx="20" cy="20" r="5" fill="#10131A" stroke="#7B7CFF" stroke-width="2.5"/>
+
+    <!-- output lines -->
+    <path d="M26 17 H34" stroke="#8A5CFF" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M26 23 H34" stroke="#8A5CFF" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

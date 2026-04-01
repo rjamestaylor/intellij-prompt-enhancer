@@ -28,6 +28,11 @@ intellijPlatform {
     }
 }
 
+// Package the 40x40 plugin icon at the zip root for the Plugins settings page.
+tasks.named<Zip>("buildPlugin") {
+    from(layout.projectDirectory.file("pluginIcon.svg"))
+}
+
 tasks {
     buildSearchableOptions {
         // Speeds up local builds; re-enable before marketplace submission.
