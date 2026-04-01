@@ -51,12 +51,11 @@
       <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift meta alt PERIOD"/>
       <add-to-group group-id="ToolsMenu" anchor="last"/>
     </action>
-
-    <!-- Right-click context menu in the Terminal tool window -->
-    <group>
-      <separator/>
-      <reference ref="ClaudeEnhancer.EnhancePrompt"/>
-      <add-to-group group-id="Terminal.ReworkedTerminalContextMenu" anchor="first"/>
-    </group>
+    <!--
+      Terminal right-click context menu: not possible in 2024.3.
+      The terminal uses JediTerm's native JPopupMenu, not IntelliJ action groups.
+      Terminal.ReworkedTerminalContextMenu exists only in 2025.x+.
+      Revisit when sinceBuild is bumped to 253+.
+    -->
   </actions>
 </idea-plugin>
