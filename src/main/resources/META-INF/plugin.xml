@@ -18,13 +18,23 @@
   ]]></description>
 
   <change-notes><![CDATA[
+    <b>0.2.0</b>
+    <ul>
+      <li><b>Claude Code [Beta] plugin required</b> — the enhancer now depends on the
+          dedicated Claude Code tab; running Claude Code in a plain terminal is no longer supported.</li>
+      <li><b>Non-modal dialog</b> — you can now see and interact with the IDE while reviewing the enhanced prompt.</li>
+      <li><b>Test Connection button</b> in Settings to verify your API key/endpoint without running an enhancement.</li>
+      <li><b>Elapsed timer</b> — shows seconds elapsed while the LLM call is in progress.</li>
+      <li><b>Cmd+Enter / Ctrl+Enter</b> shortcut to insert the enhanced prompt from anywhere in the dialog.</li>
+      <li>Confirmation dialog before re-enhancing when you have unsaved edits.</li>
+      <li>Action added to <b>Tools menu</b> for discoverability.</li>
+      <li>Fixed JSON unescape bug that corrupted prompts containing backslashes.</li>
+      <li>Added timeouts to git and CLI subprocesses to prevent hangs.</li>
+      <li>Hardened system prompt to prevent the model from answering instead of rewriting.</li>
+    </ul>
     <b>0.1.0</b>
     <ul>
-      <li>Initial release: keyboard-shortcut prompt enhancement with three API backends</li>
-      <li>Fixed CLI backend deadlock, clipboard fallback EDT freeze, binary resolution caching</li>
-      <li><b>System prompt improved</b> — the model no longer refuses non-coding inputs.
-          If upgrading from a pre-release build, reset the system prompt in
-          <em>Settings → Tools → Claude Prompt Enhancer</em> to pick up the fix.</li>
+      <li>Initial release: keyboard-shortcut prompt enhancement with three API backends.</li>
     </ul>
   ]]></change-notes>
 
