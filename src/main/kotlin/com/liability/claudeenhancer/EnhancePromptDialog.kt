@@ -6,6 +6,7 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.ui.DialogWrapper.IdeModalityType
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
@@ -45,7 +46,7 @@ class EnhancePromptDialog(
     initialPrompt: String,
     private val context: String,
     private val onInsert: (String) -> Unit,
-) : DialogWrapper(project, true) {
+) : DialogWrapper(project, true, IdeModalityType.MODELESS) {
 
     private val originalArea  = JBTextArea(initialPrompt, 6, 70).apply {
         lineWrap = true; wrapStyleWord = true
