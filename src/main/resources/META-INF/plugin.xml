@@ -63,6 +63,7 @@
     <action id="ClaudeEnhancer.EnhancePrompt"
             class="com.liability.claudeenhancer.EnhancePromptAction"
             text="Enhance Prompt for Claude Code"
+            icon="/icons/pluginicon.svg"
             description="Rewrites the current terminal input via a lightweight model, then lets you review before inserting">
       <!-- Shift+Opt+Cmd+. (period) — user-chosen, avoids all known conflicts -->
       <keyboard-shortcut keymap="$default"       first-keystroke="shift ctrl alt PERIOD"/>
