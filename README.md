@@ -68,6 +68,22 @@ The plugin never auto-submits. You always review before sending.
 | Max context chars | Cap on context sent to the model | 2000 |
 | System prompt | Instructions for prompt rewriting | Built-in default |
 
+## Why a dialog instead of inline suggestions?
+
+A natural question: why does this plugin open a dialog instead of showing inline "ghost text" suggestions directly in the terminal, like code completion does in the editor?
+
+**The terminal doesn't support inline completions.** JetBrains' inline completion API (`InlineCompletionProvider`) only works in code editors — it requires an internal editor component that the terminal does not expose to plugins. The terminal's input area is managed by a separate subsystem (JediTerm in 2024.x, a new frontend in 2025.x), and neither version provides extension points for third-party inline suggestions. This is a platform limitation, not a design choice we could work around.
+
+**Review and editing matter for prompt enhancement.** Even if inline suggestions were technically possible, they only support accept-or-reject — you can't tweak a suggestion before accepting it. Prompt enhancement works best when you can read the rewritten version, adjust phrasing, and then send it. The two-pane dialog gives you that editing step.
+
+**The dialog is non-modal.** You can see and interact with the terminal, editor, and other IDE panels while the dialog is open. It behaves more like a floating tool than a blocking popup — review the suggestion, glance at your code for context, edit, and insert when ready.
+
+**Finding the feature.** The plugin is available through:
+- **Keyboard shortcut**: Shift+Opt+Cmd+. (Mac) or Shift+Ctrl+Alt+. (Windows/Linux)
+- **Tools menu**: Tools → Enhance Prompt for Claude Code
+
+> **Future:** JetBrains is evolving the terminal's plugin API. When the platform adds extension points for terminal-level completions or overlays (anticipated in 2025.3+), this plugin will adopt them. For now, the dialog approach is the most reliable way to deliver the feature across all supported IDE versions.
+
 ## Development
 
 ```bash
